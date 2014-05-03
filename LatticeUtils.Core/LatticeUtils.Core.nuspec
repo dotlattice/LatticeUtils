@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>LatticeUtils.Core</id>
+    <version>$version$</version>
+    <title>LatticeUtils</title>
+    <authors>dotlattice</authors>
+    <projectUrl>http://github.com/dotlattice/LatticeUtils</projectUrl>
+    <licenseUrl>http://unlicense.org/</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A collection of .NET utility classes.</description>
+    <tags>util</tags>
+  </metadata>
+</package>

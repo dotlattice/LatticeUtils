@@ -1,0 +1,15 @@
+# Visual Studio
+[Bb]in/
+[Oo]bj/
+*.suo
+*.sln.VisualState.xml
+[Tt]est[Rr]esult*.xml
+*.csproj.user
+
+# Nuget
+packages/
+*.nupkg
+
+# Mercurial
+.hg/
+.hgignore
