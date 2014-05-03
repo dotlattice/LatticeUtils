@@ -2,7 +2,6 @@
 
 LatticeUtils is a lightweight .NET library that provides some basic utility methods.
 
-
 ## What Does It Do?
 
 Basically this library is a collection of static classes that fill in some gaps in what the standard library provides.
@@ -12,7 +11,7 @@ Basically this library is a collection of static classes that fill in some gaps 
 * [ConvertUtils](#convertutils)- a more comprehensive version of Convert.ChangeType
 * [StreamUtils](#streamutils) - methods that operate on streams, including methods for converting TextReaders to streams
 * [CollectionUtils](#collectionutils) - provide methods equivalent to the ones in the List&lt;T&gt; class for any Collection&lt;T&gt;
-* [AnonymousTypeUtils](#anonymoustypeuUtils) - generate anonymous types dynamically at runtime
+* [AnonymousTypeUtils](#anonymoustypeutils) - generate anonymous types dynamically at runtime
 
 
 ## ReflectionUtils
