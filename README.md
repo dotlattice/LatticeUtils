@@ -1,17 +1,18 @@
-# LatticeUtils
+# LatticeUtils [![Build status](https://ci.appveyor.com/api/projects/status/y6ya4k6gqltw7942)](https://ci.appveyor.com/project/dotlattice/latticeutils)
 
 LatticeUtils is a lightweight .NET library that provides some basic utility methods.
+
 
 ## What Does It Do?
 
 Basically this library is a collection of static classes that fill in some gaps in what the standard library provides.
 
-* [ReflectionUtils](#ReflectionUtils) - methods that let you find members of a class using strongly typed expressions instead of string literals
-* [ParseUtils](#ParseUtils) - a generic parse method and methods for parsing value types in one line
-* [ConvertUtils](#ConvertUtils)- a more comprehensive version of Convert.ChangeType
-* [StreamUtils](#StreamUtils) - methods that operate on streams, including methods for converting TextReaders to streams
-* [CollectionUtils](#CollectionUtils) - provide methods equivalent to the ones in the List&lt;T&gt; class for any Collection&lt;T&gt;
-* [AnonymousTypeUtils](#AnonymousTypeUtils) - generate anonymous types dynamically at runtime
+* [ReflectionUtils](#reflectionutils) - methods that let you find members of a class using strongly typed expressions instead of string literals
+* [ParseUtils](#parseutils) - a generic parse method and methods for parsing value types in one line
+* [ConvertUtils](#convertutils)- a more comprehensive version of Convert.ChangeType
+* [StreamUtils](#streamutils) - methods that operate on streams, including methods for converting TextReaders to streams
+* [CollectionUtils](#collectionutils) - provide methods equivalent to the ones in the List&lt;T&gt; class for any Collection&lt;T&gt;
+* [AnonymousTypeUtils](#anonymoustypeuUtils) - generate anonymous types dynamically at runtime
 
 
 ## ReflectionUtils

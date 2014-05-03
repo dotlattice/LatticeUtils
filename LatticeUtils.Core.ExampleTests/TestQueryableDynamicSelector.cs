@@ -1,7 +1,10 @@
-﻿using LatticeUtils.Core.ExampleTests.Examples;
+﻿using Effort;
+using Effort.DataLoaders;
+using LatticeUtils.Core.ExampleTests.Examples;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Data.Entity;
 using System.Linq;
 using System.Text;
@@ -14,7 +17,8 @@ namespace LatticeUtils.Core.ExampleTests
         [Test]
         public void Northwind_SimpleDynamicSelectMatchesNormalSelect()
         {
-            using (var context = new NorthwindContext())
+            using (var connection = Effort.DbConnectionFactory.CreateTransient())
+            using (var context = new NorthwindContext(connection, contextOwnsConnection: true))
             {
                 var dynamicSelectQueryable = new QueryableDynamicSelector().SelectProperties(context.Customers, new HashSet<string> { "CustomerID", "ContactName" });
                 var dynamicSelectSql = dynamicSelectQueryable.ToString();
@@ -41,8 +45,8 @@ namespace LatticeUtils.Core.ExampleTests
                 Initialize();
             }
 
-            public NorthwindContext(string nameOrConnectionString)
-                : base(nameOrConnectionString)
+            public NorthwindContext(DbConnection existingConnection, bool contextOwnsConnection)
+                : base(existingConnection, contextOwnsConnection)
             {
                 Initialize();
             }

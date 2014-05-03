@@ -6,7 +6,7 @@
     <title>LatticeUtils</title>
     <authors>dotlattice</authors>
     <projectUrl>http://github.com/dotlattice/LatticeUtils</projectUrl>
-    <licenseUrl>http://unlicense.org/</licenseUrl>
+    <licenseUrl>https://github.com/dotlattice/LatticeUtils/blob/master/License.md</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A collection of .NET utility classes.</description>
     <tags>util</tags>
