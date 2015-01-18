@@ -86,7 +86,7 @@ namespace LatticeUtils.Core
             {
                 try
                 {
-                    return ParseUtils.Parse((string)value, conversionType);
+                    return ParseUtils.ParseInvariant((string)value, conversionType);
                 }
                 catch (FormatException ex)
                 {

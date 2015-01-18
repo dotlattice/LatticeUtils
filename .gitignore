@@ -5,10 +5,13 @@
 *.sln.VisualState.xml
 [Tt]est[Rr]esult*.xml
 *.csproj.user
+*.mdf
+*.ldf
 
 # Nuget
 packages/
 *.nupkg
+.nuget/NuGet.exe
 
 # Mercurial
 .hg/
