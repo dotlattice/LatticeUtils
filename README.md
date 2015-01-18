@@ -16,13 +16,13 @@ Basically this library is a collection of static classes that fill in some gaps 
 
 ## Installation
 
-There are several ways to install this package:
+There are several ways to install this library:
 
 * Install the [NuGet package](https://www.nuget.org/packages/LatticeUtils.Core/)
 * Download the assembly from the [latest release](https://github.com/dotlattice/LatticeUtils/releases/latest) and install it manually
-* Copy just the parts you want into your own project
+* Copy the parts you want into your own project
 
-This entire library is released under a [public domain license](https://github.com/dotlattice/LatticeUtils/blob/master/LICENSE.md).  So for the last point, you can copy as much of this library as you want into your own project without having to worry about attribution or any of that stuff.
+This entire library is released into the [public domain](https://github.com/dotlattice/LatticeUtils/blob/master/LICENSE.md).  So you can copy anything from this library into your own project without having to worry about attribution or any of that stuff.
 
 
 ## ReflectionUtils
