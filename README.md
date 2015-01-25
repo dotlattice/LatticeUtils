@@ -297,28 +297,28 @@ That's a great feature if you know what columns you need in advance.  But if you
 Here's an example of a method that selects some properties from an IQueryable&lt;&gt; using a list of strings to pick the properties:
 
 ```c#
-public IQueryable SelectProperties<T>(IQueryable<T> queryable, ICollection<string> propertyNames)
+public IQueryable SelectProperties<T>(IQueryable<T> queryable, ISet<string> propertyNames)
 {
-    var properties = typeof(T).GetProperties().Where(p => propertyNames.Contains(p.Name));
+	var properties = typeof(T).GetProperties().Where(p => propertyNames.Contains(p.Name));
 
-    var entityParameterExpression = Expression.Parameter(typeof(T));
-    var propertyExpressions = properties.Select(p => Expression.Property(entityParameterExpression, p));
+	var entityParameterExpression = Expression.Parameter(typeof(T));
+	var propertyExpressions = properties.Select(p => Expression.Property(entityParameterExpression, p));
 
-    var anonymousType = AnonymousTypeUtils.CreateType(properties.ToDictionary(p => p.Name, p => p.PropertyType), isPropertyOrderSignificant: true);
-    var anonymousTypeConstructor = anonymousType.GetConstructors().Single();
-    var anonymousTypeMembers = anonymousType.GetProperties().Cast<MemberInfo>().ToArray();
+	var anonymousType = AnonymousTypeUtils.CreateType(properties.ToDictionary(p => p.Name, p => p.PropertyType));
+	var anonymousTypeConstructor = anonymousType.GetConstructors().Single();
+	var anonymousTypeMembers = anonymousType.GetProperties().Cast<MemberInfo>().ToArray();
 
-    // It's important to include the anonymous type members in the New expression, otherwise EntityFramework 
-    // won't recognize this as the constructor of an anonymous type.
-    var anonymousTypeNewExpression = Expression.New(anonymousTypeConstructor, propertyExpressions, anonymousTypeMembers);
+	// It's important to include the anonymous type members in the New expression, otherwise EntityFramework 
+	// won't recognize this as the constructor of an anonymous type.
+	var anonymousTypeNewExpression = Expression.New(anonymousTypeConstructor, propertyExpressions, anonymousTypeMembers);
 
-    var selectLambdaMethod = GetExpressionLambdaMethod(entityParameterExpression.Type, anonymousType);
-    var selectBodyLambdaParameters = new object[] { anonymousTypeNewExpression, new[] { entityParameterExpression } };
-    var selectBodyLambdaExpression = (LambdaExpression)selectLambdaMethod.Invoke(null, selectBodyLambdaParameters);
+	var selectLambdaMethod = GetExpressionLambdaMethod(entityParameterExpression.Type, anonymousType);
+	var selectBodyLambdaParameters = new object[] { anonymousTypeNewExpression, new[] { entityParameterExpression } };
+	var selectBodyLambdaExpression = (LambdaExpression)selectLambdaMethod.Invoke(null, selectBodyLambdaParameters);
 
-    var selectMethod = GetQueryableSelectMethod(typeof(T), anonymousType);
-    var selectedQueryable = selectMethod.Invoke(null, new object[] { queryable, selectBodyLambdaExpression }) as IQueryable;
-    return selectedQueryable;
+	var selectMethod = GetQueryableSelectMethod(typeof(T), anonymousType);
+	var selectedQueryable = selectMethod.Invoke(null, new object[] { queryable, selectBodyLambdaExpression }) as IQueryable;
+	return selectedQueryable;
 }
 ``` 
 

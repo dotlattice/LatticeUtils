@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.30110.0
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LatticeUtils.Core", "LatticeUtils.Core\LatticeUtils.Core.csproj", "{A079B21C-4EAB-4F69-AC4D-234268C1D861}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LatticeUtils", "LatticeUtils\LatticeUtils.csproj", "{A079B21C-4EAB-4F69-AC4D-234268C1D861}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LatticeUtils.Core.UnitTests", "LatticeUtils.Core.UnitTests\LatticeUtils.Core.UnitTests.csproj", "{FBCBC102-CBDB-41D5-A1FA-F455A9A0662F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LatticeUtils.UnitTests", "LatticeUtils.UnitTests\LatticeUtils.UnitTests.csproj", "{FBCBC102-CBDB-41D5-A1FA-F455A9A0662F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{9025755D-A8EE-4185-AFF5-3CF90043138E}"
 	ProjectSection(SolutionItems) = preProject
@@ -14,7 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{902575
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LatticeUtils.Core.ExampleTests", "LatticeUtils.Core.ExampleTests\LatticeUtils.Core.ExampleTests.csproj", "{F37C1AD8-F930-45F9-9B91-37E32CC8B52F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LatticeUtils.ExampleTests", "LatticeUtils.ExampleTests\LatticeUtils.ExampleTests.csproj", "{F37C1AD8-F930-45F9-9B91-37E32CC8B52F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
