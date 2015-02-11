@@ -131,7 +131,6 @@ namespace LatticeUtils.UnitTests
             Assert.AreEqual(expectedTypeName, anonymousGenericTypeDefinition.Name);
         }
 
-
         [Test]
         public void CreateType_CommaInPropertyName()
         {
@@ -149,6 +148,20 @@ namespace LatticeUtils.UnitTests
             });
             Assert.AreNotSame(t1, t2);
             Assert.AreNotEqual(t1, t2);
+        }
+
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(6)]
+        [TestCase(10)]
+        [TestCase(50)]
+        [TestCase(1000)]
+        public void CreateTypeDefinition_LargeNumberOfProperties(int propertyCount)
+        {
+            var propertyNames = Enumerable.Range(0, propertyCount).Select(i => "Property" + i.ToString()).ToList();
+
+            var genericTypeDefinition = AnonymousTypeUtils.CreateGenericTypeDefinition(propertyNames);
+            Assert.AreEqual(propertyCount, genericTypeDefinition.GetProperties().Length);
         }
 
         [Test]
@@ -194,6 +207,44 @@ namespace LatticeUtils.UnitTests
                 { "a", 1 },
                 { "c", new DateTime(2014, 1, 1) },
                 { "d", new object() },
+            };
+
+            var objA = AnonymousTypeUtils.CreateObject(valueDictionary);
+            var objB = AnonymousTypeUtils.CreateObject(valueDictionary);
+
+            Assert.AreNotSame(objA, objB);
+            Assert.AreEqual(objA, objB);
+            Assert.IsTrue(objA.Equals(objA));
+            Assert.IsTrue(objB.Equals(objB));
+            Assert.IsTrue(objA.Equals(objB));
+            Assert.IsTrue(objB.Equals(objA));
+        }
+
+        [Test]
+        public void CreateObject_Equals_EqualObjects_LargeNumberOfProperties()
+        {
+            var valueDictionary = new Dictionary<string, object>
+            {
+                { "b", "test" },
+                { "a", 1 },
+                { "c", new DateTime(2014, 1, 1) },
+                { "d", new object() },
+                { "e", 1 },
+                { "f", 2 },
+                { "g", 3 },
+                { "h", 4 },
+                { "i", 5 },
+                { "j", 6 },
+                { "k", 7 },
+                { "l", 8 },
+                { "m", 1 },
+                { "n", 2 },
+                { "o", 3 },
+                { "p", 4 },
+                { "q", 5 },
+                { "r", 6 },
+                { "s", 7 },
+                { "t", 8 },
             };
 
             var objA = AnonymousTypeUtils.CreateObject(valueDictionary);

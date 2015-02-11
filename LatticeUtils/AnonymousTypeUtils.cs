@@ -297,7 +297,7 @@ namespace LatticeUtils
             return typeBuilder.CreateType();
         }
 
-        private static void AddEqualsMethod(TypeBuilder typeBuilder, IEnumerable<FieldBuilder> fields)
+        private static void AddEqualsMethod(TypeBuilder typeBuilder, ICollection<FieldBuilder> fields)
         {
             var equalsMethodBuilder = typeBuilder.DefineMethod(
                 name: "Equals",
@@ -322,6 +322,11 @@ namespace LatticeUtils
             il.Emit(OpCodes.Stloc_0);
             il.Emit(OpCodes.Ldloc_0);
 
+            // Only the last five fields can use the short form of the branch.
+            const int maximumShortBranchFieldCount = 5;
+            var shortBranchThreshold = Math.Max(fields.Count - maximumShortBranchFieldCount, 0);
+
+            int currentFieldIndex = 0;
             foreach (var field in fields)
             {
                 var equalityComparerGenericTypeDefinition = typeof(System.Collections.Generic.EqualityComparer<>);
@@ -335,7 +340,14 @@ namespace LatticeUtils
                 var equalityComparerEqualsMethod = TypeBuilder.GetMethod(equalityComparerType, equalityComparerEqualsGenericMethodDefinition);
                 var equalityComparerDefaultPropertyGetter = TypeBuilder.GetMethod(equalityComparerType, equalityComparerDefaultGenericPropertyGetterDefinition);
 
-                il.Emit(OpCodes.Brfalse_S, label1);
+                if (currentFieldIndex >= shortBranchThreshold)
+                {
+                    il.Emit(OpCodes.Brfalse_S, label1);
+                }
+                else
+                {
+                    il.Emit(OpCodes.Brfalse, label1);
+                }
                 il.EmitCall(OpCodes.Call, equalityComparerDefaultPropertyGetter, null);
 
                 il.Emit(OpCodes.Ldarg_0);
@@ -345,6 +357,8 @@ namespace LatticeUtils
                 il.Emit(OpCodes.Ldfld, field);
 
                 il.EmitCall(OpCodes.Callvirt, equalityComparerEqualsMethod, null);
+
+                currentFieldIndex++;
             }
             il.Emit(OpCodes.Br_S, label2);
 
