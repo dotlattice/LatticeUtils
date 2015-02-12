@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LatticeUtils.UnitTests
@@ -431,6 +432,42 @@ namespace LatticeUtils.UnitTests
             });
             var expectedString = "{ b = test, a = 1, c = 1/1/2014 12:00:00 AM, d = System.Object }";
             Assert.AreEqual(expectedString, obj.ToString());
+        }
+
+        [Test]
+        public void CreateType_MultipleThreads()
+        {
+            // Our goal with this test is to have multiple threads creating the same type at the same time.
+            // This should help us detect if there are issues with our locking (like in Issue #2).
+
+            // The number of types we create will be iterationCount * threadCount * typeCount
+            const int iterationCount = 100;
+            const int threadCount = 8;
+            const int typeCount = 5;
+
+            for (var i = 0; i < iterationCount; i++)
+            {
+                // We'll generate the property names ahead of time, and then create one type per property (per task).
+                var propertyNames = Enumerable.Range(0, typeCount).Select(k => string.Format("MultiThreadTestProperty{0}.{1}", i, k)).ToList();
+
+                // Create several tasks that will all try to create the same types at once.
+                var tasks = new List<Task>(threadCount);
+                for (var j = 0; j < threadCount; j++)
+                {
+                    var task = new TaskFactory().StartNew(() =>
+                    {
+                        foreach (var propertyName in propertyNames)
+                        {
+                            AnonymousTypeUtils.CreateObject(new Dictionary<string, object> { { propertyName, "test" } });
+                        }
+                    });
+                    tasks.Add(task);
+                }
+
+                // Wait for all of the tasks to finish
+                // If anything goes wrong in the above code, the exception will be thrown here.
+                Task.WaitAll(tasks.ToArray());
+            }
         }
     }
 }

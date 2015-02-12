@@ -128,21 +128,14 @@ namespace LatticeUtils
 
         private static Type GetOrCreateGenericTypeDefinition(ICollection<string> propertyNames, bool isMutable)
         {
-            if (propertyNames == null) throw new ArgumentNullException("propertyNames");
             if (!propertyNames.Any()) throw new ArgumentOutOfRangeException("propertyNames", propertyNames.Count, "At least one property name is required to create an anonymous type");
 
-            var genericTypeDefinitionName = GenerateGenericTypeDefinitionName(propertyNames, isMutableType: isMutable);
-            return GetOrCreateGenericTypeDefinition(genericTypeDefinitionName, propertyNames, isMutable: isMutable);
-        }
-
-        private static string GenerateGenericTypeDefinitionName(ICollection<string> propertyNames, bool isMutableType)
-        {
             // A real anonymous type is named something like "<>f__AnonymousType0`2" (for the first anonymous type generated with two properties).
 
             // We'll mostly try to match this format, but with a few differences:
-            // * Add the library name (to avoid any possible name conflict with real anonymous types)
-            // * Add the word "Mutable" for mutable types (a real anonymous type is never mutable so they don't need to deal with that).
-            // * Use a hash of the property names instead of the counter (the "0" in the above example).
+            // * Add our library name (to avoid any possible name conflict with real anonymous types)
+            // * Add the word "Mutable" for mutable types (a real anonymous type is never mutable so they don't need to deal with that)
+            // * Use a hash of the property names instead of the counter (the "0" in the above example)
 
             // That counter in a real anonymous type is zero for the first anonymous type, one for the second, two for the third, etc.
             // We could store a global counter to do the same thing, but then using the same set of property names 
@@ -160,33 +153,27 @@ namespace LatticeUtils
                 propertyNameHashHexString = BitConverter.ToString(hashBytes).Replace("-", string.Empty);
             }
 
-            return string.Format("<>f__LatticeUtils{0}AnonymousType{1}`{2}",
-                (isMutableType ? "Mutable" : string.Empty),
+            string genericTypeDefinitionName = string.Format("<>f__LatticeUtils{0}AnonymousType{1}`{2}",
+                (isMutable ? "Mutable" : string.Empty),
                 propertyNameHashHexString,
                 propertyNames.Count
             );
-        }
 
-        private static Type GetOrCreateGenericTypeDefinition(string genericTypeDefinitionName, ICollection<string> propertyNames, bool isMutable)
-        {
-            // Doing a double-check lock thing to avoid locking unless we have to.
-            var genericTypeDefinition = moduleBuilder.GetType(genericTypeDefinitionName);
-            if (genericTypeDefinition == null)
+            // We need to check for the type and define/create it as one atomic operation, 
+            // otherwise we could get a TypeBuilder back instead of a full Type.
+            Type genericTypeDefinition;
+            lock (syncRoot)
             {
-                lock (syncRoot)
+                genericTypeDefinition = moduleBuilder.GetType(genericTypeDefinitionName);
+                if (genericTypeDefinition == null)
                 {
-                    // Now that we have the lock, do a second check in case the type was created while we were waiting for the lock
-                    genericTypeDefinition = moduleBuilder.GetType(genericTypeDefinitionName);
-                    if (genericTypeDefinition == null)
-                    {
-                        genericTypeDefinition = CreateGenericTypeDefinitionWithoutLockCheck(genericTypeDefinitionName, propertyNames, isMutable: isMutable);
-                    }
+                    genericTypeDefinition = CreateGenericTypeDefinitionNoLock(genericTypeDefinitionName, propertyNames, isMutable: isMutable);
                 }
             }
             return genericTypeDefinition;
         }
 
-        private static Type CreateGenericTypeDefinitionWithoutLockCheck(string genericTypeDefinitionName, ICollection<string> propertyNames, bool isMutable)
+        private static Type CreateGenericTypeDefinitionNoLock(string genericTypeDefinitionName, ICollection<string> propertyNames, bool isMutable)
         {
             var typeBuilder = moduleBuilder.DefineType(genericTypeDefinitionName,
                 attr: TypeAttributes.Public | TypeAttributes.AutoLayout
@@ -284,20 +271,18 @@ namespace LatticeUtils
             }
             constructorIlGenerator.Emit(OpCodes.Ret);
 
-            // Override the Equals, GetHashCode to match the logic of a real anonymous type
-            AddEqualsMethod(typeBuilder, fieldBuilders);
-            AddGetHashCodeMethod(typeBuilder, fieldBuilders);
+            DefineEqualsMethod(typeBuilder, fieldBuilders);
+            DefineGetHashCodeMethod(typeBuilder, fieldBuilders);
 
-            // Override the ToString method to match the format of a real anonymous type
             var fieldPairs = propertyNames.Zip(fieldBuilders,
                 (propertyName, fieldBuilder) => new KeyValuePair<string, FieldBuilder>(propertyName, fieldBuilder)
             ).ToArray();
-            AddToStringMethod(typeBuilder, fieldPairs);
+            DefineToStringMethod(typeBuilder, fieldPairs);
 
             return typeBuilder.CreateType();
         }
 
-        private static void AddEqualsMethod(TypeBuilder typeBuilder, ICollection<FieldBuilder> fields)
+        private static void DefineEqualsMethod(TypeBuilder typeBuilder, ICollection<FieldBuilder> fields)
         {
             var equalsMethodBuilder = typeBuilder.DefineMethod(
                 name: "Equals",
@@ -376,7 +361,7 @@ namespace LatticeUtils
             typeBuilder.DefineMethodOverride(equalsMethodBuilder, typeof(object).GetMethod("Equals", new[] { typeof(object) }));
         }
 
-        private static void AddGetHashCodeMethod(TypeBuilder typeBuilder, IEnumerable<FieldBuilder> fields)
+        private static void DefineGetHashCodeMethod(TypeBuilder typeBuilder, IEnumerable<FieldBuilder> fields)
         {
             var getHashCodeMethodBuilder = typeBuilder.DefineMethod(
                 name: "GetHashCode",
@@ -428,7 +413,7 @@ namespace LatticeUtils
             typeBuilder.DefineMethodOverride(getHashCodeMethodBuilder, typeof(object).GetMethod("GetHashCode"));
         }
 
-        private static void AddToStringMethod(TypeBuilder typeBuilder, IEnumerable<KeyValuePair<string, FieldBuilder>> fieldPairs)
+        private static void DefineToStringMethod(TypeBuilder typeBuilder, IEnumerable<KeyValuePair<string, FieldBuilder>> fieldPairs)
         {
             var toStringMethodBuilder = typeBuilder.DefineMethod(
                 name: "ToString",
