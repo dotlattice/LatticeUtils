@@ -417,7 +417,16 @@ namespace LatticeUtils.UnitTests
             };
 
             Assert.AreNotSame(objA, objB);
-            Assert.AreEqual(objA.GetHashCode(), objB.GetHashCode());
+
+            // This was true with the C# 5 compiler, but not with the Roslyn compiler for C# 6.
+            // And we shouldn't be making any assumptions about the GetHashCode() value from an anonymous type, anyway.
+            //Assert.AreEqual(objA.GetHashCode(), objB.GetHashCode());
+
+            var hash = -842606958;
+            hash = (hash * -1521134295) + 1.GetHashCode();
+            hash = (hash * -1521134295) + "test".GetHashCode();
+            hash = (hash * -1521134295) + new DateTime(2014, 1, 1).GetHashCode();
+            Assert.AreEqual(hash, objA.GetHashCode());
         }
 
         [Test]
