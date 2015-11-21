@@ -462,7 +462,7 @@ namespace LatticeUtils.UnitTests
         }
 
         [Test]
-        public void CreateObject_GetHashCode_SameAsRealAnonymousObject()
+        public void CreateObject_GetHashCode_UsesExpectedAlgorithm()
         {
             var objA = AnonymousTypeUtils.CreateObject(new Dictionary<string, object>
             {
@@ -470,19 +470,10 @@ namespace LatticeUtils.UnitTests
                 { "b", "test" },
                 { "c", new DateTime(2014, 1, 1) },
             });
-            var objB = new { 
-                a = 1, 
-                b = "test", 
-                c = new DateTime(2014, 1, 1) 
-            };
 
-            Assert.AreNotSame(objA, objB);
-
-            // This was true with the C# 5 compiler, but not with the Roslyn compiler for C# 6.
-            // And we shouldn't be making any assumptions about the GetHashCode() value from an anonymous type, anyway.
-            //Assert.AreEqual(objA.GetHashCode(), objB.GetHashCode());
-
-            var hash = -842606958;
+            // Seems questionable to hardcode in the algorithm in a test,
+            // but since the real thing is done through generated IL then it seems legit maybe?
+            var hash = 2141462152;
             hash = (hash * -1521134295) + 1.GetHashCode();
             hash = (hash * -1521134295) + "test".GetHashCode();
             hash = (hash * -1521134295) + new DateTime(2014, 1, 1).GetHashCode();

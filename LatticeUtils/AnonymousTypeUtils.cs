@@ -464,7 +464,17 @@ namespace LatticeUtils
             il.DeclareLocal(typeof(int));
             il.DeclareLocal(typeof(int));
 
-            il.Emit(OpCodes.Ldc_I4, -842606958);
+            int hashSeed = 0;
+            const int hashMultiplier = -1521134295;
+            foreach (var field in fields)
+            {
+                unchecked
+                {
+                    hashSeed = (hashSeed * hashMultiplier) + field.Name.GetHashCode();
+                }
+            }
+
+            il.Emit(OpCodes.Ldc_I4, hashSeed);
             il.Emit(OpCodes.Stloc_0);
 
             foreach (var field in fields)
@@ -480,7 +490,7 @@ namespace LatticeUtils
                 var equalityComparerDefaultPropertyGetter = TypeBuilder.GetMethod(equalityComparerType, equalityComparerDefaultGenericPropertyGetterDefinition);
                 var equalityComparerGetHashCodeMethod = TypeBuilder.GetMethod(equalityComparerType, equalityComparerGetHashCodeGenericMethodDefinition);
 
-                il.Emit(OpCodes.Ldc_I4, -1521134295);
+                il.Emit(OpCodes.Ldc_I4, hashMultiplier);
                 il.Emit(OpCodes.Ldloc_0);
                 il.Emit(OpCodes.Mul);
 
