@@ -473,10 +473,21 @@ namespace LatticeUtils.UnitTests
 
             // Seems questionable to hardcode in the algorithm in a test,
             // but since the real thing is done through generated IL then it seems legit maybe?
-            var hash = 2141462152;
-            hash = (hash * -1521134295) + 1.GetHashCode();
-            hash = (hash * -1521134295) + "test".GetHashCode();
-            hash = (hash * -1521134295) + new DateTime(2014, 1, 1).GetHashCode();
+            int hash = 0;
+            const int hashMultiplier = -1521134295;
+            foreach (var field in objA.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
+            {
+                unchecked
+                {
+                    hash = (hash * hashMultiplier) + field.Name.GetHashCode();
+                }
+            }
+            unchecked
+            {
+                hash = (hash * hashMultiplier) + 1.GetHashCode();
+                hash = (hash * hashMultiplier) + "test".GetHashCode();
+                hash = (hash * hashMultiplier) + new DateTime(2014, 1, 1).GetHashCode();
+            }
             Assert.AreEqual(hash, objA.GetHashCode());
         }
 

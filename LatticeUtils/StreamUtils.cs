@@ -23,23 +23,23 @@ namespace LatticeUtils
         /// <returns>the stream</returns>
         public static Stream FromTextReader(TextReader textReader)
         {
-            return FromTextReader(textReader, preferredEncoding: null);
+            return FromTextReader(textReader, fallbackEncoding: null);
         }
 
         /// <summary>
         /// Returns a stream that reads from the specified text reader, which will use the specified 
-        /// encoding if the stream needs to convert characters to bytes.
+        /// fallback encoding if the stream needs to convert characters to bytes.
         /// </summary>
         /// <remarks>
         /// Depending on the type of <c>TextReader</c>, the resulting stream may be read-only 
         /// (with <c>Stream.CanSeek</c> and <c>Stream.CanWrite</c> both false).
-        /// The specified encoding will only be used if a backing stream for the text reader 
+        /// The fallback encoding will only be used if a backing stream for the text reader 
         /// cannot be found (for example, if it is not a <c>StreamReader</c>).
         /// </remarks>
         /// <param name="textReader">the <c>TextReader</c> to convert to a stream</param>
-        /// <param name="preferredEncoding">the encoding to use (if necessary)</param>
+        /// <param name="fallbackEncoding">the encoding to use if the encoding of the reader cannot be detected</param>
         /// <returns>the stream</returns>
-        public static Stream FromTextReader(TextReader textReader, Encoding preferredEncoding)
+        public static Stream FromTextReader(TextReader textReader, Encoding fallbackEncoding)
         {
             if (textReader is StreamReader)
             {
@@ -47,7 +47,7 @@ namespace LatticeUtils
             }
             else
             {
-                return new TextReaderStream(textReader, encoding: preferredEncoding);
+                return new TextReaderStream(textReader, encoding: fallbackEncoding);
             }
         }
 

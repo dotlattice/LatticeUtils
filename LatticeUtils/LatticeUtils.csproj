@@ -43,6 +43,7 @@
     <Compile Include="Collections\ReadOnlyCollection.cs" />
     <Compile Include="CollectionUtils.cs" />
     <Compile Include="ConvertUtils.cs" />
+    <Compile Include="Parser.cs" />
     <Compile Include="ParseUtils.cs" />
     <Compile Include="ReflectionUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
