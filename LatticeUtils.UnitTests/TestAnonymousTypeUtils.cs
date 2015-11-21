@@ -32,16 +32,7 @@ namespace LatticeUtils.UnitTests
                 { "b", typeof(string) },
                 { "a", typeof(int) }
             };
-            Type anonymousType;
-            if (isMutable)
-            {
-                anonymousType = AnonymousTypeUtils.CreateMutableType(typeDictionary);
-            }
-            else
-            {
-                anonymousType = AnonymousTypeUtils.CreateType(typeDictionary);
-            }
-
+            var anonymousType = AnonymousTypeUtils.CreateType(typeDictionary, isMutable: isMutable);
             Assert.AreEqual(2, anonymousType.GetProperties().Length);
 
             var propertyA = anonymousType.GetProperty("a");
@@ -66,35 +57,17 @@ namespace LatticeUtils.UnitTests
             Assert.AreEqual("b", constructorParameters.ElementAt(0).Name);
             Assert.AreEqual("a", constructorParameters.ElementAt(1).Name);
 
-            string expectedTypeName;
-            if (isMutable)
-            {
-                expectedTypeName = "<>f__LatticeUtilsMutableAnonymousTypeFC2E7EE73C4F69821B908A4DF7585D1018EE7D9A`2";
-            }
-            else
-            {
-                expectedTypeName = "<>f__LatticeUtilsAnonymousTypeFC2E7EE73C4F69821B908A4DF7585D1018EE7D9A`2";
-            }
-
-            Assert.AreEqual(expectedTypeName, anonymousType.Name);
+            StringAssert.StartsWith("<>f__LatticeUtilsAnonymousType", anonymousType.Name);
+            StringAssert.EndsWith("`2", anonymousType.Name);
         }
 
         [TestCase(true)]
         [TestCase(false)]
         public void CreateGenericTypeDefinition(bool isMutable)
         {
-            var typeNames = new[] { "b", "a" };
+            var propertyNames = new[] { "b", "a" };
 
-            Type anonymousGenericTypeDefinition;
-            if (isMutable)
-            {
-                anonymousGenericTypeDefinition = AnonymousTypeUtils.CreateMutableGenericTypeDefinition(typeNames);
-            }
-            else
-            {
-                anonymousGenericTypeDefinition = AnonymousTypeUtils.CreateGenericTypeDefinition(typeNames);
-            }
-
+            var anonymousGenericTypeDefinition = AnonymousTypeUtils.CreateGenericTypeDefinition(propertyNames, isMutable: isMutable);
             Assert.AreEqual(2, anonymousGenericTypeDefinition.GetProperties().Length);
 
             var propertyA = anonymousGenericTypeDefinition.GetProperty("a");
@@ -119,17 +92,31 @@ namespace LatticeUtils.UnitTests
             Assert.AreEqual("b", constructorParameters.ElementAt(0).Name);
             Assert.AreEqual("a", constructorParameters.ElementAt(1).Name);
 
-            string expectedTypeName;
-            if (isMutable)
-            {
-                expectedTypeName = "<>f__LatticeUtilsMutableAnonymousTypeFC2E7EE73C4F69821B908A4DF7585D1018EE7D9A`2";
-            }
-            else
-            {
-                expectedTypeName = "<>f__LatticeUtilsAnonymousTypeFC2E7EE73C4F69821B908A4DF7585D1018EE7D9A`2";
-            }
+            StringAssert.StartsWith("<>f__LatticeUtilsAnonymousType", anonymousGenericTypeDefinition.Name);
+            StringAssert.EndsWith("`2", anonymousGenericTypeDefinition.Name);
+        }
 
-            Assert.AreEqual(expectedTypeName, anonymousGenericTypeDefinition.Name);
+        [Test]
+        public void CreateGenericTypeDefinition_ParentClass()
+        {
+            var parentType = typeof(TestClass);
+            Type anonymousGenericTypeDefinition = AnonymousTypeUtils.CreateGenericTypeDefinition(
+                propertyNames: new[] { "b", "a" }, 
+                isMutable: false, 
+                parent: parentType
+            );
+            Assert.IsTrue(anonymousGenericTypeDefinition.IsSubclassOf(parentType));
+        }
+
+        [Test]
+        public void CreateGenericTypeDefinition_ParentClassWithConstructor()
+        {
+            var expectedException = Assert.Throws<ArgumentException>(() => AnonymousTypeUtils.CreateGenericTypeDefinition(
+                propertyNames: new[] { "b", "a" },
+                isMutable: false,
+                parent: typeof(TestClassWithConstructor)
+            ));
+            StringAssert.Contains("default constructor", expectedException.Message);
         }
 
         [Test]
@@ -197,6 +184,79 @@ namespace LatticeUtils.UnitTests
             var propertyB = obj.GetType().GetProperty("b");
             Assert.AreEqual(propertyB.PropertyType, typeof(object));
             Assert.IsNull(propertyB.GetValue(obj));            
+        }
+
+        [Test]
+        public void CreateObject_ParentClass()
+        {
+            var typeDictionary = new Dictionary<string, Type>
+            {
+                { "b", typeof(string) },
+                { "a", typeof(int) }
+            };
+            var parentType = typeof(TestClass);
+            var anonymousType = AnonymousTypeUtils.CreateType(typeDictionary, isMutable: false, parent: parentType);
+
+            var obj = AnonymousTypeUtils.CreateObject(new Dictionary<string, object>
+            {
+                { "b", "test" },
+                { "a", 1 },
+            }, anonymousType);
+            Assert.AreEqual(parentType, obj.GetType().BaseType);
+
+            TestClass objTestClass = obj as TestClass;
+            objTestClass.DoThings();
+        }
+
+        [Test]
+        public void CreateObject_ParentClassWithDefaultConstructor()
+        {
+            var typeDictionary = new Dictionary<string, Type>
+            {
+                { "b", typeof(string) },
+                { "a", typeof(int) }
+            };
+            var parentType = typeof(TestClassWithDefaultConstructor);
+            var anonymousType = AnonymousTypeUtils.CreateType(typeDictionary, isMutable: false, parent: parentType);
+
+            var obj = AnonymousTypeUtils.CreateObject(new Dictionary<string, object>
+            {
+                { "b", "test" },
+                { "a", 1 },
+            }, anonymousType);
+            Assert.AreEqual(parentType, obj.GetType().BaseType);
+
+            var objTestClass = obj as TestClassWithDefaultConstructor;
+            Assert.AreEqual(2, objTestClass.Value);
+        }
+
+        [Test]
+        public void CreateObject_ParentClassWithDefaultConstructor_ReusePropertyName()
+        {
+            var typeDictionary = new Dictionary<string, Type>
+            {
+                { "a", typeof(string) },
+                { "Value", typeof(int) }
+            };
+            var parentType = typeof(TestClassWithDefaultConstructor);
+            var anonymousType = AnonymousTypeUtils.CreateType(typeDictionary, isMutable: false, parent: parentType);
+
+            var obj = AnonymousTypeUtils.CreateObject(new Dictionary<string, object>
+            {
+                { "a", "1" },
+                { "Value", 3 },
+            }, anonymousType);
+            Assert.AreEqual(parentType, obj.GetType().BaseType);
+
+            // If we get the value of the property directly from our new type, then it should be the one we set.
+            var valueProperty = obj.GetType().GetProperty("Value", System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            Assert.IsNotNull(valueProperty);
+            Assert.AreEqual(3, valueProperty.GetValue(obj));
+
+            // We don't override the base class property (and can't if it isn't virtual),
+            // so the value when cast as the base type should still be what was set in the default constructor.
+            var objTestClass = obj as TestClassWithDefaultConstructor;
+            Assert.AreEqual(2, objTestClass.Value);
         }
 
         [Test]
@@ -478,5 +538,34 @@ namespace LatticeUtils.UnitTests
                 Task.WaitAll(tasks.ToArray());
             }
         }
+
+        #region Test Classes
+
+        public class TestClass
+        {
+            public void DoThings() { }
+        }
+
+        public class TestClassWithConstructor
+        {
+            public TestClassWithConstructor(int value)
+            {
+                Value = value;
+            }
+
+            public int Value { get; set; }
+        }
+
+        public class TestClassWithDefaultConstructor
+        {
+            public TestClassWithDefaultConstructor()
+            {
+                this.Value = 2;
+            }
+
+            public int Value { get; set; }
+        }
+
+        #endregion
     }
 }

@@ -38,10 +38,10 @@ namespace LatticeUtils
         //}
 
         /// <summary>
-        /// Creates an anonymous object for the specified name/value pairs.
+        /// Creates an object from an anonymous type with the specified name/value pairs.
         /// </summary>
         /// <param name="valueDictionary">mappings of property names to values</param>
-        /// <returns>the anonymous object</returns>
+        /// <returns>the object</returns>
         public static object CreateObject(IDictionary<string, object> valueDictionary)
         {
             var typeDictionary = valueDictionary.ToDictionary(kv => kv.Key, kv => kv.Value != null ? kv.Value.GetType() : typeof(object));
@@ -50,15 +50,15 @@ namespace LatticeUtils
         }
 
         /// <summary>
-        /// Creates an anonymous object for the specified name/value pairs with the specified anonymous type.
+        /// Creates an object for the specified name/value pairs with the specified anonymous type.
         /// </summary>
         /// <remarks>
-        /// This version of the <c>CreateObject</c> method can be used when it's necessary to have more control 
+        /// This version of the <c>CreateObject</c> method can be used when you need more control 
         /// over how the anonymous type is generated.
         /// </remarks>
         /// <param name="valueDictionary">mappings of property names to values</param>
         /// <param name="anonymousType">the anonymous type to use for the resulting object</param>
-        /// <returns>the anonymous object</returns>
+        /// <returns>the object</returns>
         public static object CreateObject(IDictionary<string, object> valueDictionary, Type anonymousType)
         {
             var constructor = anonymousType.GetConstructors().Single();
@@ -74,28 +74,33 @@ namespace LatticeUtils
         /// <returns>the anonymous type</returns>
         public static Type CreateType(IEnumerable<KeyValuePair<string, Type>> typePairs)
         {
-            return CreateType(typePairs, isMutable: false);
+            return CreateType(typePairs, isMutable: false, parent: null);
         }
 
         /// <summary>
-        /// Creates a mutable anonymous type for the specified property name / type pairs.
+        /// Creates an anonymous type that may be mutable for the specified property name/type pairs.
         /// </summary>
-        /// <remarks>
-        /// This will create a version of an anonymous type in which all of the properties have setters.
-        /// </remarks>
         /// <param name="typePairs">mappings of property names to types</param>
-        /// <returns>the mutable anonymous type</returns>
-        public static Type CreateMutableType(IEnumerable<KeyValuePair<string, Type>> typePairs)
+        /// <param name="isMutable">true if the anonymous type's properties should have setters</param>
+        /// <returns>the anonymous type</returns>
+        public static Type CreateType(IEnumerable<KeyValuePair<string, Type>> typePairs, bool isMutable)
         {
-            return CreateType(typePairs, isMutable: true);
+            return CreateType(typePairs, isMutable: isMutable, parent: null);
         }
 
-        private static Type CreateType(IEnumerable<KeyValuePair<string, Type>> typePairs, bool isMutable)
+        /// <summary>
+        /// Creates an anonymous type that may be mutable for the specified property name/type pairs with the (optional) parent type.
+        /// </summary>
+        /// <param name="typePairs">mappings of property names to types</param>
+        /// <param name="isMutable">true if the anonymous type's properties should have setters</param>
+        /// <param name="parent">the parent of the anonymous type, or null to not specify a base type</param>
+        /// <returns>the anonymous type</returns>
+        public static Type CreateType(IEnumerable<KeyValuePair<string, Type>> typePairs, bool isMutable, Type parent)
         {
             if (typePairs == null) throw new ArgumentNullException("typePairs");
 
             var propertyNames = typePairs.Select(pair => pair.Key);
-            var genericTypeDefinition = GetOrCreateGenericTypeDefinition(propertyNames.ToList(), isMutable: isMutable);
+            var genericTypeDefinition = GetOrCreateGenericTypeDefinition(propertyNames.ToList(), isMutable: isMutable, parent: parent);
 
             var propertyTypes = typePairs.Select(pair => pair.Value);
             return genericTypeDefinition.MakeGenericType(propertyTypes.ToArray());
@@ -108,55 +113,48 @@ namespace LatticeUtils
         /// <returns>the anonymous generic type definition</returns>
         public static Type CreateGenericTypeDefinition(IEnumerable<string> propertyNames)
         {
-            if (propertyNames == null) throw new ArgumentNullException("propertyNames");
-            return GetOrCreateGenericTypeDefinition(propertyNames.ToList(), isMutable: false);
+            return CreateGenericTypeDefinition(propertyNames, isMutable: false, parent: null);
         }
 
         /// <summary>
-        /// Creates a mutable anonymous generic type definition for the specified property names.
+        /// Creates an anonymous generic type definition that may be mutable with the specified property names.
         /// </summary>
-        /// <remarks>
-        /// This will create a version of an anonymous type in which all of the properties have setters.
-        /// </remarks>
         /// <param name="propertyNames">the property names</param>
-        /// <returns>the mutable anonymous generic type definition</returns>
-        public static Type CreateMutableGenericTypeDefinition(IEnumerable<string> propertyNames)
+        /// <param name="isMutable">true if the properties should have setters</param>
+        /// <returns>the anonymous generic type definition</returns>
+        public static Type CreateGenericTypeDefinition(IEnumerable<string> propertyNames, bool isMutable)
         {
-            if (propertyNames == null) throw new ArgumentNullException("propertyNames");
-            return GetOrCreateGenericTypeDefinition(propertyNames.ToList(), isMutable: true);
+            return CreateGenericTypeDefinition(propertyNames, isMutable: isMutable, parent: null);
         }
 
-        private static Type GetOrCreateGenericTypeDefinition(ICollection<string> propertyNames, bool isMutable)
+        /// <summary>
+        /// Creates an anonymous generic type definition that may be mutable for the specified property names and (optional) parent type.
+        /// </summary>
+        /// <param name="propertyNames">the property names</param>
+        /// <param name="isMutable">true if the properties should have setters</param>
+        /// <param name="parent">the parent class of the anonymous type, or null if it has no parent class</param>
+        /// <returns>the anonymous generic type definition</returns>
+        public static Type CreateGenericTypeDefinition(IEnumerable<string> propertyNames, bool isMutable, Type parent)
         {
-            if (!propertyNames.Any()) throw new ArgumentOutOfRangeException("propertyNames", propertyNames.Count, "At least one property name is required to create an anonymous type");
+            if (propertyNames == null) throw new ArgumentNullException("propertyNames");
+            return GetOrCreateGenericTypeDefinition(propertyNames.ToList(), isMutable: isMutable, parent: parent);
+        }
 
-            // A real anonymous type is named something like "<>f__AnonymousType0`2" (for the first anonymous type generated with two properties).
-
-            // We'll mostly try to match this format, but with a few differences:
-            // * Add our library name (to avoid any possible name conflict with real anonymous types)
-            // * Add the word "Mutable" for mutable types (a real anonymous type is never mutable so they don't need to deal with that)
-            // * Use a hash of the property names instead of the counter (the "0" in the above example)
-
-            // That counter in a real anonymous type is zero for the first anonymous type, one for the second, two for the third, etc.
-            // We could store a global counter to do the same thing, but then using the same set of property names 
-            // could generate a different type name depending on how many types you've already generated.
-            // But it makes things easier if we have a deterministic name generation strategy,  
-            // so we're going to use a hash of the property names instead of a global counter.
-            string propertyNameHashHexString;
-            using (var hasher = new SHA1Managed())
+        private static Type GetOrCreateGenericTypeDefinition(ICollection<string> propertyNames, bool isMutable, Type parent)
+        {
+            if (!propertyNames.Any())
             {
-                // Doesn't really matter how we join these property names together, as long as we'll never 
-                // have two types with different property names that generate the same hash value.
-                // So we'll use a comma delimiter and escape any commas in the property names with two commas.
-                var propertyNameDelimitedString = string.Join(",", propertyNames.Select(n => n.Replace(",", ",,")));
-                var hashBytes = hasher.ComputeHash(Encoding.UTF8.GetBytes(propertyNameDelimitedString));
-                propertyNameHashHexString = BitConverter.ToString(hashBytes).Replace("-", string.Empty);
+                throw new ArgumentOutOfRangeException("propertyNames", propertyNames.Count, "At least one property name is required to create an anonymous type");
+            }
+            if (parent != null && !parent.GetConstructors().Any(c => !c.GetParameters().Any()))
+            {
+                throw new ArgumentException(string.Format("Parent type \"{0}\" is not supported because it does not have a default constructor", parent.FullName));
             }
 
-            string genericTypeDefinitionName = string.Format("<>f__LatticeUtils{0}AnonymousType{1}`{2}",
-                (isMutable ? "Mutable" : string.Empty),
-                propertyNameHashHexString,
-                propertyNames.Count
+            var genericTypeDefinitionName = GenerateGenericTypeDefinitionName(
+                propertyNames,
+                isMutable: isMutable,
+                parent: parent
             );
 
             // We need to check for the type and define/create it as one atomic operation, 
@@ -167,18 +165,78 @@ namespace LatticeUtils
                 genericTypeDefinition = moduleBuilder.GetType(genericTypeDefinitionName);
                 if (genericTypeDefinition == null)
                 {
-                    genericTypeDefinition = CreateGenericTypeDefinitionNoLock(genericTypeDefinitionName, propertyNames, isMutable: isMutable);
+                    genericTypeDefinition = CreateGenericTypeDefinitionNoLock(
+                        genericTypeDefinitionName, 
+                        propertyNames, 
+                        isMutable: isMutable, 
+                        parent: parent
+                    );
                 }
             }
             return genericTypeDefinition;
         }
 
-        private static Type CreateGenericTypeDefinitionNoLock(string genericTypeDefinitionName, ICollection<string> propertyNames, bool isMutable)
+        private static string GenerateGenericTypeDefinitionName(ICollection<string> propertyNames, bool isMutable, Type parent)
+        {
+            // A real anonymous type is named something like "<>f__AnonymousType0`2" (for the first anonymous type generated with two properties).
+
+            // We'll mostly try to match this format, but with a couple differences:
+            // * Add our library name (to avoid any possible name conflict with real anonymous types)
+            // * Use a hash of the options (property names, mutable, parent type) instead of the counter (the "0" in the above example)
+
+            // That counter in a real anonymous type is zero for the first anonymous type, one for the second, two for the third, etc.
+            // We could store a global counter to do the same thing, but then using the same set of property names 
+            // could generate a different type name depending on how many types you've already generated.
+            // I'd rather have a deterministic name generation strategy, so we're going to use a hash of the 
+            // key values instead of a global counter.
+
+            // It doesn't matter exactly this key string is formatted or how long it is since we'll just be computing a hash from it. 
+            // So I guess we'll just use a JSON format for now?
+            var keyJsonBuilder = new StringBuilder();
+            keyJsonBuilder.Append('{');
+            keyJsonBuilder.Append("properties=[");
+            keyJsonBuilder.Append(string.Join(",", propertyNames.Select(n => '"' + n.Replace("\"", "\"\"") + '"')));
+            keyJsonBuilder.Append(']');
+            if (isMutable)
+            {
+                keyJsonBuilder.Append(",isMutable=true");
+            }
+            if (parent != null)
+            {
+                keyJsonBuilder.Append(",parent=\"");
+                keyJsonBuilder.Append(parent.FullName);
+                keyJsonBuilder.Append("\"");
+            }
+            // If we add support for interfaces, then we'll need them included in the key string too...
+            //if (interfaces != null && interfaces.Any())
+            //{
+            //    keyJsonBuilder.Append(",interfaces=[");
+            //    keyJsonBuilder.Append(string.Join(",", interfaces.Select(x => x.FullName).OrderBy(n => n).Select(n => '"' + n.Replace("\"", "\"\"") + '"')));
+            //    keyJsonBuilder.Append("]");
+            //}
+            keyJsonBuilder.Append('}');
+
+            string keyHashHexString;
+            using (var hasher = new SHA1Managed())
+            {
+                var hashBytes = hasher.ComputeHash(Encoding.UTF8.GetBytes(keyJsonBuilder.ToString()));
+                keyHashHexString = BitConverter.ToString(hashBytes).Replace("-", string.Empty);
+            }
+
+            string genericTypeDefinitionName = string.Format("<>f__LatticeUtilsAnonymousType{0}`{1}",
+                keyHashHexString,
+                propertyNames.Count
+            );
+            return genericTypeDefinitionName;
+        }
+
+        private static Type CreateGenericTypeDefinitionNoLock(string genericTypeDefinitionName, ICollection<string> propertyNames, bool isMutable, Type parent)
         {
             var typeBuilder = moduleBuilder.DefineType(genericTypeDefinitionName,
                 attr: TypeAttributes.Public | TypeAttributes.AutoLayout
                 | TypeAttributes.AnsiClass | TypeAttributes.Class
-                | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit
+                | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit,
+                parent: parent
             );
             var typeParameterNames = propertyNames
                 .Select(propertyName => string.Format("<{0}>j__TPar", propertyName))
@@ -234,6 +292,40 @@ namespace LatticeUtils
                 }
             }
 
+            if (parent != null)
+            {
+                var defaultConstructor = parent.GetConstructors().FirstOrDefault(c => !c.GetParameters().Any());
+                if (defaultConstructor != null)
+                {
+                    DefineConstructor(typeBuilder, typeParameters, propertyNames, fieldBuilders, baseConstructor: defaultConstructor);
+                }
+                else
+                {
+                    DefineConstructor(typeBuilder, typeParameters, propertyNames, fieldBuilders);
+                }
+            }
+            else
+            {
+                DefineConstructor(typeBuilder, typeParameters, propertyNames, fieldBuilders);
+            }
+            DefineEqualsMethod(typeBuilder, fieldBuilders);
+            DefineGetHashCodeMethod(typeBuilder, fieldBuilders);
+
+            var fieldPairs = propertyNames.Zip(fieldBuilders,
+                (propertyName, fieldBuilder) => new KeyValuePair<string, FieldBuilder>(propertyName, fieldBuilder)
+            ).ToArray();
+            DefineToStringMethod(typeBuilder, fieldPairs);
+
+            return typeBuilder.CreateType();
+        }
+
+        private static void DefineConstructor(
+            TypeBuilder typeBuilder, 
+            Type[] typeParameters,
+            ICollection<string> propertyNames, 
+            ICollection<FieldBuilder> fieldBuilders,
+            ConstructorInfo baseConstructor = null)
+        {
             var constructorBuilder = typeBuilder.DefineConstructor(
                 attributes: MethodAttributes.PrivateScope | MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
                 callingConvention: CallingConventions.Standard | CallingConventions.HasThis,
@@ -243,6 +335,7 @@ namespace LatticeUtils
             {
                 constructorBuilder.DefineParameter(o.index + 1, ParameterAttributes.None, o.propertyName);
             }
+
             var constructorIlGenerator = constructorBuilder.GetILGenerator();
             constructorIlGenerator.Emit(OpCodes.Ldarg_0);
             constructorIlGenerator.Emit(OpCodes.Call, typeof(object).GetConstructors().Single());
@@ -269,17 +362,12 @@ namespace LatticeUtils
                 }
                 constructorIlGenerator.Emit(OpCodes.Stfld, field);
             }
+            if (baseConstructor != null)
+            {
+                constructorIlGenerator.Emit(OpCodes.Ldarg_0);
+                constructorIlGenerator.Emit(OpCodes.Call, baseConstructor);
+            }
             constructorIlGenerator.Emit(OpCodes.Ret);
-
-            DefineEqualsMethod(typeBuilder, fieldBuilders);
-            DefineGetHashCodeMethod(typeBuilder, fieldBuilders);
-
-            var fieldPairs = propertyNames.Zip(fieldBuilders,
-                (propertyName, fieldBuilder) => new KeyValuePair<string, FieldBuilder>(propertyName, fieldBuilder)
-            ).ToArray();
-            DefineToStringMethod(typeBuilder, fieldPairs);
-
-            return typeBuilder.CreateType();
         }
 
         private static void DefineEqualsMethod(TypeBuilder typeBuilder, ICollection<FieldBuilder> fields)
@@ -480,5 +568,39 @@ namespace LatticeUtils
 
             typeBuilder.DefineMethodOverride(toStringMethodBuilder, typeof(object).GetMethod("ToString"));
         }
+
+        #region Obsolete
+
+        // These methods should be removed in the next major version
+
+        /// <summary>
+        /// Creates a mutable anonymous type for the specified property name / type pairs.
+        /// </summary>
+        /// <remarks>
+        /// This will create a version of an anonymous type in which all of the properties have setters.
+        /// </remarks>
+        /// <param name="typePairs">mappings of property names to types</param>
+        /// <returns>the mutable anonymous type</returns>
+        [Obsolete("Use CreateType(IEnumerable<KeyValuePair<string, Type>>, bool) instead.")]
+        public static Type CreateMutableType(IEnumerable<KeyValuePair<string, Type>> typePairs)
+        {
+            return CreateType(typePairs, isMutable: true);
+        }
+
+        /// <summary>
+        /// Creates a mutable anonymous generic type definition for the specified property names.
+        /// </summary>
+        /// <remarks>
+        /// This will create a version of an anonymous type in which all of the properties have setters.
+        /// </remarks>
+        /// <param name="propertyNames">the property names</param>
+        /// <returns>the mutable anonymous generic type definition</returns>
+        [Obsolete("Use CreateGenericTypeDefinition(IEnumerable<string>, bool) instead.")]
+        public static Type CreateMutableGenericTypeDefinition(IEnumerable<string> propertyNames)
+        {
+            return CreateGenericTypeDefinition(propertyNames, isMutable: true);
+        }
+
+        #endregion
     }
 }
